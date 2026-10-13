@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Long Term Episodic Vector Db API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
+    "description": "Development-only illustrative threshold audit API. Not a vector database endpoint or clinical decision system; authentication is not provided.",
     "version": "3.0.0-ENTERPRISE",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
@@ -15,17 +15,17 @@
         "summary": "Health and metadata check",
         "responses": {
           "200": {
-            "description": "System optimal"
+            "description": "Process health status"
           }
         }
       }
     },
     "/metrics": {
       "get": {
-        "summary": "Prometheus operational metrics",
+        "summary": "JSON counts for processed dossiers and audit blocks",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "JSON metrics (not Prometheus text)"
           }
         }
       }
@@ -69,14 +69,14 @@
         },
         "responses": {
           "200": {
-            "description": "Consensus dossier with HMAC signature"
+            "description": "Illustrative threshold evaluation with in-memory HMAC audit hash"
           }
         }
       }
     },
     "/api/chat": {
       "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
+        "summary": "Deterministic mock response (no model inference)",
         "requestBody": {
           "content": {
             "application/json": {
@@ -106,7 +106,7 @@
         "summary": "Retrieve and cryptographically verify HMAC audit trail",
         "responses": {
           "200": {
-            "description": "Cryptographic audit trail"
+            "description": "In-memory HMAC-linked audit entries and integrity check"
           }
         }
       }

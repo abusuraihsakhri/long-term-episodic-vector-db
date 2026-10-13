@@ -5,6 +5,7 @@ Enterprise Security, PHI Outbound Guard, and HMAC-SHA256 Audit Trail.
 import os
 import re
 import json
+import copy
 import time
 import hmac
 import hashlib
@@ -111,7 +112,7 @@ class AuditTrail:
         return True
 
     def get_trail(self) -> List[Dict[str, Any]]:
-        return self.logs
+        return copy.deepcopy(self.logs)
 
 
 GLOBAL_AUDIT = AuditTrail()

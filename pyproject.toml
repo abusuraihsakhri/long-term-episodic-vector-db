@@ -16,12 +16,20 @@ classifiers = [
     "Topic :: Security/Cryptography",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-requires-python = ">=3.9"
-dependencies = []
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2,<3"]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.100", "uvicorn>=0.23"]
+test = ["pytest>=8"]
 
 [project.scripts]
-long-term-episodic-vector-db = "episodic_vector_store.cli:main"
+long-term-episodic-vector-db = "cli:main"
 
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/long-term-episodic-vector-db"
 Repository = "https://github.com/abusuraihsakhri/long-term-episodic-vector-db.git"
+
+[tool.setuptools]
+packages = ["agents", "episodic_vector_store"]
+py-modules = ["cli", "enrichment", "simulator"]

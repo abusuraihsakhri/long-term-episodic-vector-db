@@ -11,6 +11,16 @@ from .agents import EpisodicMemoryCoordinator
 coordinator = EpisodicMemoryCoordinator()
 
 
+def parse_csv_bool(value):
+    value = str(value).strip().lower()
+    if value in ("true", "1", "yes", "y"):
+        return True
+    if value in ("false", "0", "no", "n", ""):
+        return False
+    raise ValueError(f"Invalid boolean value: {value!r}")
+
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="long-term-episodic-vector-db", description="EpisodicVector-Store: Hierarchical HNSW & Cross-Session Memory Agent")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -74,7 +84,7 @@ def main(argv=None):
             fieldnames = list(reader.fieldnames or [])
             rows = list(reader)
 
-        out_fields = fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]
+        out_fields = list(dict.fromkeys(fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]))
         out_rows = []
         for r in rows:
             payload = FrontierPayload(
@@ -83,7 +93,7 @@ def main(argv=None):
                 primary_metric=float(r.get("primary_metric", 15.0)),
                 secondary_metric=float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=parse_csv_bool(r.get("is_critical_flag", False)),
             )
             dossier = coordinator.process(payload)
             row_dict = dict(r)

@@ -1,40 +1,47 @@
-name: Long Term Episodic Vector Db CI/CD & Security Verification
+name: Tests and packaging
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
   pull_request:
-    branches: [ master, main ]
+    branches: [master, main]
 
 jobs:
-  test-and-audit:
+  python:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[api,test]' build
+          python -m pip check
+      - name: Test
+        run: python -m pytest -q
+      - name: Build wheel
+        run: python -m build --wheel
+      - name: Audit-chain regression test
+        run: python -m pytest -q tests/test_long_term_episodic_vector_db.py -k audit_trail
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
-
-    - name: Run Pytest Suite
-      run: |
-        pytest -v
-
-    - name: Security SAST & Zero-PHI Audit
-      run: |
-        python -c "
-        from agents.base import PHIGuard, AuditLogger
-        import pytest
-        assert AuditLogger.verify_integrity() is True
-        print('Security & Zero-PHI Audit Passed!')
-        "
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check browser JavaScript syntax
+        run: node --check web/app.mjs
+      - name: Test browser vector logic
+        run: node --test web/test-app.mjs
+      - name: Verify Pages entry point
+        run: |
+          test -f index.html
+          test -f web/index.html
+          test -f web/app.mjs

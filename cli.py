@@ -8,8 +8,31 @@ import sys
 from agents.models import SystemTaskPayload
 from agents.supervisor import SystemSupervisor
 from agents.base import AuditLogger
+from episodic_vector_store.store import VectorStore
+import os
 
 supervisor = SystemSupervisor(model_provider="mock")
+
+
+def parse_csv_bool(value):
+    """Parse CSV boolean values without treating the string 'False' as true."""
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in ("", "false", "0", "no", "n"):
+        return False
+    if normalized in ("true", "1", "yes", "y"):
+        return True
+    raise ValueError(f"Invalid boolean value: {value!r}")
+
+
+def parse_embedding(value):
+    """Parse a JSON numeric array; VectorStore enforces dimensional validity."""
+    data = json.loads(value)
+    if not isinstance(data, list):
+        raise ValueError("Embedding must be a JSON array, e.g. '[1,0,0]'")
+    return data
+
 
 
 def main(argv=None):
@@ -41,6 +64,23 @@ def main(argv=None):
     p_serve = subparsers.add_parser("serve", help="Launch FastAPI REST server")
     p_serve.add_argument("--host", default="127.0.0.1")
     p_serve.add_argument("--port", type=int, default=8000)
+
+    # Exact cosine similarity over supplied vectors (no automatic embeddings).
+    p_put = subparsers.add_parser("memory-put", help="Insert or replace a vector episode")
+    p_put.add_argument("--id", required=True)
+    p_put.add_argument("--vector", required=True, help="Embedding as a JSON array")
+    p_put.add_argument("--text", default="")
+    p_put.add_argument("--metadata", default="{}", help="JSON object")
+    p_search = subparsers.add_parser("memory-search", help="Exact cosine search")
+    p_search.add_argument("--vector", required=True)
+    p_search.add_argument("--top-k", type=int, default=5)
+    p_search.add_argument("--min-similarity", type=float, default=-1.0)
+    subparsers.add_parser("memory-list", help="List stored episodes")
+    p_delete = subparsers.add_parser("memory-delete", help="Delete a stored episode")
+    p_delete.add_argument("--id", required=True)
+    for p in (p_put, p_search, subparsers.choices["memory-list"], p_delete):
+        p.add_argument("--db", default=os.environ.get("EPISODIC_STORE_PATH", "episodes.json"),
+                       help="Local JSON storage path (default: episodes.json)")
 
     args = parser.parse_args(argv)
 
@@ -85,7 +125,7 @@ def main(argv=None):
             fieldnames = list(reader.fieldnames or [])
             rows = list(reader)
 
-        out_fields = fieldnames + ["overall_urgency", "integrity_status", "total_alerts", "audit_hash"]
+        out_fields = list(dict.fromkeys(fieldnames + ["overall_urgency", "integrity_status", "total_alerts", "audit_hash"]))
         out_rows = []
         for r in rows:
             payload = SystemTaskPayload(
@@ -94,7 +134,7 @@ def main(argv=None):
                 primary_metric=float(r.get("primary_metric", 15.0)),
                 secondary_metric=float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=parse_csv_bool(r.get("is_critical_flag", False)),
             )
             dossier = supervisor.process_task(payload)
             row_dict = dict(r)
@@ -109,6 +149,22 @@ def main(argv=None):
             writer.writeheader()
             writer.writerows(out_rows)
         print(f"Processed {len(out_rows)} records -> {args.output}")
+        return 0
+
+    if args.command.startswith("memory-"):
+        store = VectorStore(args.db)
+        if args.command == "memory-put":
+            item = store.put(args.id, parse_embedding(args.vector),
+                             text=args.text, metadata=json.loads(args.metadata))
+            print(json.dumps(item, ensure_ascii=False, indent=2))
+        elif args.command == "memory-search":
+            matches = store.search(parse_embedding(args.vector),
+                                   top_k=args.top_k, min_similarity=args.min_similarity)
+            print(json.dumps(matches, ensure_ascii=False, indent=2))
+        elif args.command == "memory-list":
+            print(json.dumps(store.list_episodes(), ensure_ascii=False, indent=2))
+        elif args.command == "memory-delete":
+            print(json.dumps({"deleted": store.delete(args.id)}))
         return 0
 
     if args.command == "serve":
