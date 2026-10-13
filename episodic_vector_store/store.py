@@ -64,11 +64,13 @@ class VectorStore:
             raise ValueError("Metadata must be a JSON object")
         metadata = json.loads(json.dumps(metadata, allow_nan=False))
         vector = self._normalize(embedding)
-        if self.dimension is not None and len(vector) != self.dimension:
-            raise ValueError(f"Expected {self.dimension} dimensions, received {len(vector)}")
         if timestamp is not None and not isinstance(timestamp, str):
             raise ValueError("Invalid episode timestamp")
         with self._lock:
+            if self.dimension is not None and len(vector) != self.dimension:
+                raise ValueError(f"Expected {self.dimension} dimensions, received {len(vector)}")
+            old_dimension = self.dimension
+            old_record = self._records.get(episode_id)
             if self.dimension is None:
                 self.dimension = len(vector)
             self._records[episode_id] = {
@@ -76,8 +78,16 @@ class VectorStore:
                 "metadata": metadata,
                 "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
             }
-            if persist:
-                self._save()
+            try:
+                if persist:
+                    self._save()
+            except Exception:
+                if old_record is None:
+                    del self._records[episode_id]
+                else:
+                    self._records[episode_id] = old_record
+                self.dimension = old_dimension
+                raise
             return json.loads(json.dumps(self._records[episode_id]))
 
     def put(self, episode_id: str, embedding: list[float], text: str = "",
@@ -111,10 +121,16 @@ class VectorStore:
         with self._lock:
             if episode_id not in self._records:
                 return False
-            del self._records[episode_id]
+            previous = self._records.pop(episode_id)
+            previous_dimension = self.dimension
             if not self._records:
                 self.dimension = None
-            self._save()
+            try:
+                self._save()
+            except Exception:
+                self._records[episode_id] = previous
+                self.dimension = previous_dimension
+                raise
             return True
 
     def _save(self):
