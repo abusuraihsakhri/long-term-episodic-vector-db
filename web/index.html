@@ -1,236 +1,126 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Long Term Episodic Vector Db — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'">
+  <meta name="theme-color" content="#0b1220">
+  <title>Episodic Vector Memory · Local Cosine Search</title>
+  <style>
+    :root {color-scheme:dark;--bg:#0b1220;--panel:#151f30;--stroke:#32435c;--text:#eef3fb;--muted:#b4c2d5;--accent:#7fb7ff}
+    * {box-sizing:border-box}
+    body {margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    .wrap {max-width:1120px;margin:auto;padding:clamp(18px,3vw,40px)}
+    header {display:flex;align-items:start;justify-content:space-between;gap:20px;border-bottom:1px solid var(--stroke);padding-bottom:18px;margin-bottom:22px;flex-wrap:wrap}
+    h1 {font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.2;margin:0 0 8px}
+    h2 {font-size:1.13rem;margin:0 0 14px}
+    .muted,.lede {color:var(--muted)}
+    .lede {margin:0;max-width:70ch}
+    a {color:var(--accent)}
+    a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible {outline:3px solid #f8dc8d;outline-offset:2px}
+    .stats {display:flex;gap:12px;margin:16px 0 22px;flex-wrap:wrap}
+    .stat {padding:11px 18px;border:1px solid var(--stroke);border-radius:12px;background:var(--panel)}
+    .stat strong {font-size:1.3rem}
+    .grid {display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+    .card {background:var(--panel);border:1px solid var(--stroke);border-radius:14px;padding:20px;min-width:0}
+    label {display:block;font-weight:600;font-size:.91rem;margin:12px 0 5px}
+    input,textarea {display:block;width:100%;border:1px solid #526783;border-radius:8px;background:#0b1220;color:var(--text);padding:10px 12px;font:inherit}
+    textarea {resize:vertical;min-height:68px}
+    .button {border:0;border-radius:8px;background:#89baff;color:#092043;padding:10px 16px;font-weight:700;font:inherit;cursor:pointer;margin-top:14px}
+    .button:hover {background:#b3d3ff}
+    .button.secondary {background:#263950;color:#eaf2ff;border:1px solid #607792}
+    .button.secondary:hover {background:#344b66}
+    .button.small {font-size:.85rem;padding:5px 9px;margin-top:10px}
+    .controls {display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+    .controls > label {flex:1;min-width:180px}
+    .episode {border-top:1px solid var(--stroke);padding:14px 0;overflow-wrap:anywhere}
+    .episode:first-child {border-top:none}
+    .episode-header {display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+    .score {color:#91e9c1;font-weight:600}
+    .episode p {white-space:pre-wrap;margin:6px 0}
+    .episode small {display:block;color:var(--muted)}
+    .notice {padding:12px 16px;border:1px solid #5379a4;background:#132843;border-radius:9px;margin:16px 0;min-height:50px}
+    .notice[data-error="true"] {background:#432125;border-color:#b76470}
+    .wide {grid-column:1/-1}
+    .hint {font-size:.9rem;color:var(--muted);margin:9px 0}
+    input[type=file] {max-width:340px}
+    .footer {font-size:.86rem;color:var(--muted);margin-top:24px;border-top:1px solid var(--stroke);padding-top:16px}
+    @media(max-width:760px) {.grid{grid-template-columns:1fr}.card{padding:16px}.wrap{padding:16px}}
+  </style>
+  <script type="module" src="./app.mjs"></script>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Long Term Episodic Vector Db</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
+<main class="wrap">
+  <header>
+    <div>
+      <h1>Long-Term Episodic Vector Memory</h1>
+      <p class="lede">An in-browser, local collection for user-supplied numeric embeddings, exact cosine similarity retrieval, and JSON export.</p>
     </div>
+    <a href="https://github.com/abusuraihsakhri/long-term-episodic-vector-db" rel="noopener noreferrer">Source repository ↗</a>
+  </header>
 
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
+  <p class="hint"><strong>Privacy:</strong> Data is stored unencrypted in this browser's local storage; it is not uploaded to a server by this application. Do not enter patient identifiers, secrets, or other sensitive data. Clearing site storage removes it.</p>
+  <div class="stats" aria-label="Collection statistics">
+    <div class="stat">Episodes: <strong id="count">0</strong></div>
+    <div class="stat">Embedding dimensions: <strong id="dimension">—</strong></div>
+    <div class="stat">Method: <strong>Exact cosine</strong></div>
+  </div>
 
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
+  <div id="notice" class="notice" role="status" aria-live="polite">Ready. Add episodes or import a compatible JSON file.</div>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="add-title">
+      <h2 id="add-title">Save an episode</h2>
+      <form id="add-form">
+        <label for="episode-id">Unique episode ID</label>
+        <input id="episode-id" maxlength="128" required placeholder="visit-001" autocomplete="off">
+        <label for="episode-text">Episode text (optional)</label>
+        <textarea id="episode-text" placeholder="A description to retrieve with this vector"></textarea>
+        <label for="embedding">Embedding · JSON numeric array</label>
+        <input id="embedding" required placeholder="[0.4, 0.8, -0.2]" spellcheck="false" autocomplete="off">
+        <label for="metadata">Metadata · JSON object (optional)</label>
+        <textarea id="metadata" spellcheck="false" placeholder='{"session":"demo"}'></textarea>
+        <p class="hint">All episodes in one collection must have the same number of dimensions. Existing IDs are replaced.</p>
+        <button class="button" type="submit">Save episode</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="search-title">
+      <h2 id="search-title">Similarity search</h2>
+      <form id="search-form">
+        <label for="query">Query embedding · JSON numeric array</label>
+        <input id="query" required placeholder="[0.4, 0.7, -0.3]" spellcheck="false" autocomplete="off">
+        <div class="controls">
+          <label for="top-k">Maximum matches
+            <input id="top-k" type="number" min="1" max="100" step="1" value="5" required>
+          </label>
+          <label for="min-similarity">Minimum cosine similarity
+            <input id="min-similarity" type="number" min="-1" max="1" step=".05" value="-1" required>
+          </label>
         </div>
+        <button class="button" type="submit">Search episodes</button>
+      </form>
+      <h2 style="margin-top:26px">Matches</h2>
+      <div id="matches" aria-live="polite"><p class="muted">Search results appear here.</p></div>
+    </section>
 
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Long Term Episodic Vector Db Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "long-term-episodic-vector-db",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+    <section class="card wide" aria-labelledby="saved-title">
+      <h2 id="saved-title">Saved episodes</h2>
+      <div id="records"></div>
+    </section>
+    <section class="card wide" aria-labelledby="data-title">
+      <h2 id="data-title">Import, export &amp; reset</h2>
+      <p class="hint">The export format is versioned JSON. Imports replace the current browser collection. Export first if you want a backup.</p>
+      <div class="controls">
+        <button id="export" type="button" class="button secondary">Export JSON</button>
+        <label for="import">Import JSON file
+          <input id="import" type="file" accept=".json,application/json">
+        </label>
+        <button id="clear" type="button" class="button secondary">Delete all local episodes</button>
+      </div>
+    </section>
+  </div>
+  <footer class="footer">No embeddings are generated by this interface. Similarity search uses a linear scan; no HNSW index, cloud database, or server API is involved. Modern browsers with JavaScript and local storage are required.</footer>
+</main>
 </body>
 </html>
