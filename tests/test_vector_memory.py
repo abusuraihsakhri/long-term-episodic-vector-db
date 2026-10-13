@@ -90,3 +90,19 @@ def test_batch_csv_false_remains_noncritical(tmp_path):
     )
     assert main(["batch", "-i", str(input_file), "-o", str(output_file)]) == 0
     assert "ROUTINE" in output_file.read_text()
+
+
+def test_storage_failure_rolls_back_memory_state(monkeypatch):
+    store = VectorStore()
+    store.put("original", [1, 0], "old")
+
+    def failed_save():
+        raise OSError("write failed")
+
+    monkeypatch.setattr(store, "_save", failed_save)
+    with pytest.raises(OSError, match="write failed"):
+        store.put("new", [0, 1])
+    assert [item["id"] for item in store.list_episodes()] == ["original"]
+    with pytest.raises(OSError, match="write failed"):
+        store.delete("original")
+    assert [item["id"] for item in store.list_episodes()] == ["original"]
