@@ -4,3 +4,7 @@ Domain: Autonomous Context Management & State Engines
 Standard: HNSW Vector Indexing Specification
 """
 __version__ = "2.0.0-FRONTIER"
+
+from .store import VectorStore
+
+__all__ = ["VectorStore"]
